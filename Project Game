@@ -1,0 +1,97 @@
+from tkinter import *
+from time import sleep
+from PIL import ImageTk, Image
+from random import randint, uniform
+from playsound import playsound
+
+img = [0, 0, 0]
+game = Tk()
+game.title("Catch ĐRL")
+
+canvas_width = 700
+canvas_height = 525
+
+canvas = Canvas(master=game, width=canvas_width, height=canvas_height, background="white")
+canvas.pack()
+
+img[0] = ImageTk.PhotoImage(Image.open('backgr.png'))
+img[1] = ImageTk.PhotoImage(Image.open('bowl.png'))
+img[2] = ImageTk.PhotoImage(Image.open('apple.png'))
+
+backgr = canvas.create_image(canvas_width // 2, canvas_height // 2, anchor=CENTER, image=img[0])
+bowl = canvas.create_image(canvas_width // 2, canvas_height - 75, anchor=CENTER, image=img[1])
+apple = canvas.create_image(canvas_width // 2, canvas_height // 2, anchor=CENTER, image=img[2])
+
+canvas.update()
+
+score = 0
+text_score = canvas.create_text(canvas_width - 80, 30, text='SCORE:' + str(score), fill='red', font=('Times', 20))
+
+lives = 3
+fall_speed = 10 
+
+text_lives = canvas.create_text(80, 30, text='LIVES:' + str(lives), fill='blue', font=('Times', 20))
+
+def AppleFall():
+    global apple, score, lives, fall_speed
+    canvas.move(apple, 0, fall_speed)
+    apple_coords = canvas.coords(apple)
+    bowl_coords = canvas.coords(bowl)
+
+    if apple_coords[1] > canvas_height + 50:
+        canvas.delete(apple)
+        y = -20
+        x = randint(10, canvas_width - 10)
+        apple = canvas.create_image(x, y, anchor=CENTER, image=img[2])
+        lives -= 1
+        update_lives_text()
+        if lives == 0:
+            game_over()
+
+    if (
+            bowl_coords[0] - 60 <= apple_coords[0] <= bowl_coords[0] + 60 and
+            bowl_coords[1] - 18.75 <= apple_coords[1] + 60 <= bowl_coords[1] + 18.75
+    ):
+        playsound('vacham.wav')
+        canvas.delete(apple)
+        y = -20
+        x = randint(10, canvas_width - 10)
+        apple = canvas.create_image(x, y, anchor=CENTER, image=img[2])
+
+        random_score = randint(3, 6)
+        score += random_score
+
+        canvas.itemconfig(text_score, text='SCORE:' + str(score))
+        fall_speed += 1
+
+    canvas.update()
+
+def right(event):
+    global bo
+    if canvas.coords(bowl)[0] < canvas_width - 60:
+        canvas.move(bowl, 20, 0)
+    canvas.update()
+
+def left(event):
+    global bowl
+    if canvas.coords(bowl)[0] > 60:
+        canvas.move(bowl, -20, 0)
+    canvas.update()
+
+def update_lives_text():
+    canvas.itemconfig(text_lives, text='LIVES:' + str(lives))
+
+def game_over():
+    global gameOver
+    gameOver = True
+    canvas.create_text(canvas_width // 2, canvas_height // 2, text='Game Over', fill='red', font=('Times', 40, 'bold'))
+
+canvas.bind_all('<Right>', right)
+canvas.bind_all('<Left>', left)
+
+gameOver = False
+while not gameOver:
+    AppleFall()
+    sleep(0.05)
+
+game.mainloop()
